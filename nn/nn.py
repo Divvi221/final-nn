@@ -106,7 +106,16 @@ class NeuralNetwork:
             Z_curr: ArrayLike
                 Current layer linear transformed matrix.
         """
-        pass
+        Z_curr = np.dot(W_curr,A_prev) + b_curr #linear transformation step
+
+        if activation == "sigmoid":
+            A_curr = self._sigmoid(Z_curr)
+        elif activation == "relu":
+            A_curr = self._relu(Z_curr)
+        else:
+            raise Exception("This activation function is not supported: {}".format(activation))
+        
+        return A_curr, Z_curr
 
     def forward(self, X: ArrayLike) -> Tuple[ArrayLike, Dict[str, ArrayLike]]:
         """
@@ -122,7 +131,23 @@ class NeuralNetwork:
             cache: Dict[str, ArrayLike]:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
-        pass
+        cache = {}
+        A_curr = X.T
+        #num_layers = len(self.arch) - 1
+        for ind, layer in enumerate(self.arch,1): 
+            #getting matrices from param dict and setting A_prev
+            A_prev = A_curr #setting inputs as A_curr for first loop
+            W_curr = self._param_dict['W' + str(ind)]
+            b_curr = self._param_dict['b' + str(ind)]
+            activation = layer["activation"]
+            #using the single_forward function to do a forward pass for each iteration
+            A_curr, Z_curr = self._single_forward(W_curr, b_curr, A_curr,activation)
+            #storing A_prev and Z_curr in 
+            cache['A' + str(ind - 1)] = A_prev
+            cache['Z' + str(ind)] = Z_curr
+
+        output = A_curr
+        return output, cache
 
     def _single_backprop(
         self,
