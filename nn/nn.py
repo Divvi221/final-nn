@@ -30,7 +30,7 @@ class NeuralNetwork:
 
     def __init__(
         self,
-        nn_arch: List[Dict[str, Union(int, str)]],
+        nn_arch: List[Dict[str, Union[int, str]]],
         lr: float,
         seed: int,
         batch_size: int,
@@ -113,7 +113,7 @@ class NeuralNetwork:
         elif activation == "relu":
             A_curr = self._relu(Z_curr)
         else:
-            raise Exception("This activation function is not supported: {}".format(activation))
+            raise Exception("Wrong activation function: {}".format(activation))
         
         return A_curr, Z_curr
 
@@ -132,7 +132,7 @@ class NeuralNetwork:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
         cache = {}
-        A_curr = X.T
+        A_curr = X.T #initially had .T
         #num_layers = len(self.arch) - 1
         for ind, layer in enumerate(self.arch,1): 
             #getting matrices from param dict and setting A_prev
@@ -143,10 +143,10 @@ class NeuralNetwork:
             #using the single_forward function to do a forward pass for each iteration
             A_curr, Z_curr = self._single_forward(W_curr, b_curr, A_curr,activation)
             #storing A_prev and Z_curr in 
-            cache['A' + str(ind - 1)] = A_prev
+            cache['A' + str(ind-1)] = A_prev #used to be ind - 1 ; and = A_prev
             cache['Z' + str(ind)] = Z_curr
 
-        output = A_curr
+        output = A_curr.T #this .T was not here originally
         return output, cache
 
     def _single_backprop(
@@ -185,12 +185,12 @@ class NeuralNetwork:
         """
         #calculating dZ_curr
         if activation_curr == "sigmoid":
-            sigmoid = self._sigmoid(Z_curr)
-            dZ_curr = self._sigmoid_backprop(sigmoid)
+            dZ_curr = self._sigmoid_backprop(dA_curr,Z_curr) #change this to appropriate args
         elif activation_curr == "relu":
             dZ_curr = self._relu_backprop(dA_curr,Z_curr)
 
-        m = np.shape(A_prev)[1]
+        m = A_prev.shape[1]
+    
         dW_curr = np.dot(dZ_curr, A_prev.T) / m
         db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
         dA_prev = np.dot(W_curr.T, dZ_curr)
@@ -221,6 +221,8 @@ class NeuralNetwork:
             dA_prev = self._binary_cross_entropy_backprop(y,y_hat)
         elif self._loss_func == "mean_squared_error":
             dA_prev = self._mean_squared_error_backprop(y,y_hat)
+        else:
+            raise Exception("Incorrect loss function")
 
         #iterate through layers backwards
         for idx_prev, layer in reversed(list(enumerate(self.arch, 1))):
@@ -252,10 +254,23 @@ class NeuralNetwork:
             grad_dict: Dict[str, ArrayLike]
                 Dictionary containing the gradient information from most recent round of backprop.
         """
-        for key in self._param_dict.keys():
-            if key in grad_dict:
-                self._param_dict[key] -= self._lr * grad_dict[key]
+        #for key in self._param_dict.keys():
+        #    if key in grad_dict:
+        #        #self._param_dict[key] -= self._lr * grad_dict[key]
+        #        update_amount = self._lr * grad_dict[key]
+        #        print(f"Updating {key}: max update amount {np.max(np.abs(update_amount))}")
+        #        self._param_dict[key] -= update_amount
+        for idx, layer in enumerate(self.arch, 1):
+            #dictionary keys to access the weights, biases and their gradients
+            W = f'W{idx}'
+            dW = f'dW{idx}'
 
+            b = f'b{idx}'
+            db = f'db{idx}'
+
+            if dW in grad_dict and db in grad_dict:
+                self._param_dict[W] = self._param_dict[W] - (self._lr * grad_dict[dW])
+                self._param_dict[b] = self._param_dict[b] - (self._lr * grad_dict[db])
 
     def fit(
         self,
@@ -329,7 +344,7 @@ class NeuralNetwork:
                 Prediction from the model.
         """
         output, _ = self.forward(X)
-        y_hat = output.T #we transform X in forward
+        y_hat = output #.T #we transform X in forward
         return y_hat
 
     def _sigmoid(self, Z: ArrayLike) -> ArrayLike:
@@ -362,7 +377,7 @@ class NeuralNetwork:
                 Partial derivative of current layer Z matrix.
         """
         sigmoid = self._sigmoid(Z)
-        dZ = dA * sigmoid * (1-sigmoid) #using chain rule and derivative of sigmoid
+        dZ = dA.T * sigmoid * (1-sigmoid) #using chain rule and derivative of sigmoid this .T was not here before
         return dZ
 
     def _relu(self, Z: ArrayLike) -> ArrayLike:
@@ -394,7 +409,7 @@ class NeuralNetwork:
             dZ: ArrayLike
                 Partial derivative of current layer Z matrix.
         """
-        dZ = np.array(dA, copy=True) 
+        dZ = np.array(dA, copy=True) #this .T was not here before
         dZ[Z <= 0] = 0 #using array masking to make all the negative and zero values = 0. The positive values can stay positive here (but technically in the relu derivative they should = 1).
         return dZ
 
