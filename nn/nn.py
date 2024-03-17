@@ -304,21 +304,21 @@ class NeuralNetwork:
 
         for epoch in range(self._epochs):
             #forward pass
-            output_t,cache_t = self.forward(X_train)
+            output_train,cache_t = self.forward(X_train)
+            output_val, cache_val = self.forward(X_val)
+
             #calculate loss
             if self._loss_func == "binary_cross_entropy":
-                training_loss = self._binary_cross_entropy(y_train,output_t)
+                training_loss = self._binary_cross_entropy(y_train,output_train)
             elif self._loss_func == "mean_squared_error":
-                training_loss = self._mean_squared_error(y_train,output_t)
+                training_loss = self._mean_squared_error(y_train,output_train)
             #backpropagation
-            grad_dict_t = self.backprop(y_train, output_t, cache_t)
+            grad_dict_t = self.backprop(y_train, output_train, cache_t)
             #update params
             self._update_params(grad_dict_t)
 
             #store training loss per epoch
             per_epoch_loss_train.append(training_loss)
-
-            output_val, _ = self.forward(X_val)
 
             if self._loss_func == 'binary_cross_entropy':
                 val_loss = self._binary_cross_entropy(y_val, output_val)
@@ -343,8 +343,7 @@ class NeuralNetwork:
             y_hat: ArrayLike
                 Prediction from the model.
         """
-        output, _ = self.forward(X)
-        y_hat = output #.T #we transform X in forward
+        y_hat, _ = self.forward(X)
         return y_hat
 
     def _sigmoid(self, Z: ArrayLike) -> ArrayLike:
@@ -359,7 +358,7 @@ class NeuralNetwork:
             nl_transform: ArrayLike
                 Activation function output.
         """
-        nl_transform = 1 / (1 + np.exp(-1 * Z))
+        nl_transform = 1 / (1 + np.exp(-Z))
         return nl_transform
 
     def _sigmoid_backprop(self, dA: ArrayLike, Z: ArrayLike):
@@ -427,9 +426,9 @@ class NeuralNetwork:
             loss: float
                 Average loss over mini-batch.
         """
-        eps = 1e-14
+        eps = 1e-14 #epsilon
         y_hat_new = np.clip(y_hat, eps, 1 - eps) #prevent log(0)
-        loss = -np.mean(y * np.log(y_hat_new) + (1 - y) * np.log(1 - y_hat_new))
+        loss = (-1/self._batch_size) * np.sum(y * np.log(y_hat_new) + (1 - y) * np.log(1 - y_hat_new)) #y_hat here used to be y_hat_new
         return loss
 
     def _binary_cross_entropy_backprop(self, y: ArrayLike, y_hat: ArrayLike) -> ArrayLike:
@@ -449,7 +448,9 @@ class NeuralNetwork:
         eps = 1e-14
         y_hat_new = np.clip(y_hat, eps, 1 - eps)
         #gradient calculation
-        dA = (y_hat_new - y) / (y_hat_new * (1 - y_hat_new))
+        #N = y.shape[0]
+        #dA = - (np.divide(y,y_hat_new) - np.divide((1-y),(1-y_hat_new))) # * (1/N)
+        dA = -1/ self._batch_size * np.divide(y - y_hat_new, y_hat_new * (1 - y_hat_new))
         return dA
 
 
@@ -469,7 +470,7 @@ class NeuralNetwork:
         """
         y = np.asarray(y)
         y_hat = np.asarray(y_hat)
-        loss = np.mean((y - y_hat) ** 2)
+        loss = np.sum((y - y_hat) ** 2)/ self._batch_size
         return loss
 
     def _mean_squared_error_backprop(self, y: ArrayLike, y_hat: ArrayLike) -> ArrayLike:
@@ -488,6 +489,5 @@ class NeuralNetwork:
         """
         y = np.asarray(y)
         y_hat = np.asarray(y_hat)
-        n = y_hat.shape[0] #batch size
-        dA = 2.0 / n * (y_hat - y) #derivative
+        dA = (2.0/self._batch_size) * (y_hat - y) #derivative
         return dA
