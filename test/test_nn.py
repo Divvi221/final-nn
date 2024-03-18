@@ -1,8 +1,9 @@
 # TODO: import dependencies and write unit tests below
 import pytest
 import sklearn
-from nn import nn
+from nn import nn,preprocess,io
 import numpy as np
+import random
 
 def test_single_forward():
     #defining testing parameters (weights, biases, prev activation)
@@ -110,19 +111,76 @@ def test_binary_cross_entropy():
     print("test_binary_cross_entropy passed successfully.")
 
 def test_binary_cross_entropy_backprop():
-    pass
+    nn_arch = [{'input_dim': 1, 'output_dim': 1, 'activation': 'sigmoid'}]
+    test_nn = nn.NeuralNetwork(nn_arch, lr=0.01, seed=1, batch_size=1, epochs=1, loss_function='binary_cross_entropy')
+    #parameters
+    y_hat = np.array([[0.9, 0.2, 0.1]])  
+    y = np.array([[1, 0, 1]])  
+    #manual calculation of dA
+    eps = 1e-14 
+    y_hat_new = np.clip(y_hat, eps, 1 - eps)  
+    dA = -1/1 * np.divide(y - y_hat_new, y_hat_new * (1 - y_hat_new))
+    #using nn binary cross-entropy_backprop func to calculate dA
+    calculated_dA = test_nn._binary_cross_entropy_backprop(y, y_hat)
+    assert np.allclose(calculated_dA, dA), "Binary cross entropy gradient does not match expected value."
+    print("test_binary_cross_entropy_backprop passed successfully.")
 
 def test_mean_squared_error():
-    pass
+    nn_arch = [{'input_dim': 1, 'output_dim': 1, 'activation': 'sigmoid'}]
+    batch_size=1
+    test_nn = nn.NeuralNetwork(nn_arch, lr=0.01, seed=1, batch_size=batch_size, epochs=1, loss_function='mean_squared_error')
+    #parameters
+    y_hat = np.array([[0.9, 0.2, 0.1]])  
+    y = np.array([[1, 0, 1]])  
+    #manual calculation of mse loss
+    eps = 1e-14 
+    y_hat_new = np.clip(y_hat, eps, 1 - eps)  
+    loss = np.sum((y - y_hat) ** 2)/ batch_size
+    #using nn mean squared error func to calculate loss
+    calculated_loss = test_nn._mean_squared_error(y, y_hat)
+    assert np.isclose(calculated_loss, loss), "MSE does not match expected value."
+    print("test_mean_squared_error passed successfully.")
 
 def test_mean_squared_error_backprop():
-    pass
+    nn_arch = [{'input_dim': 1, 'output_dim': 1, 'activation': 'sigmoid'}]
+    batch_size=1
+    test_nn = nn.NeuralNetwork(nn_arch, lr=0.01, seed=1, batch_size=batch_size, epochs=1, loss_function='mean_squared_error')
+    #parameters
+    y_hat = np.array([[0.9, 0.2, 0.1]])  
+    y = np.array([[1, 0, 1]])  
+    #manual calculation of mse loss
+    eps = 1e-14 
+    y_hat_new = np.clip(y_hat, eps, 1 - eps)  
+    dA = (2.0/batch_size) * (y_hat - y)
+    #using nn mean squared error func to calculate loss
+    calculated_dA = test_nn._mean_squared_error_backprop(y, y_hat)
+    assert np.allclose(calculated_dA, dA), "MSE gradient does not match expected value."
+    print("test_mean_squared_error_backprop passed successfully.")
 
 def test_sample_seqs():
-    pass
+    random.seed(0)
+    seqs = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7']
+    labels = [True, True, True, True, False, False, False] #dataset is biased towards True
+    sampled_seqs, sampled_labels = preprocess.sample_seqs(seqs, labels) #after this we should have equal-ish True and False labels
+    print(sampled_labels)
+    assert sampled_labels.count(True) == sampled_labels.count(False), "Balancing failed: Unequal number of classes."
+    #assert all(seq in sampled_seqs for seq, label in zip(seqs, labels) if label), "Loss of true-labeled sequences."
+    #false_seqs = [seq for seq, label in zip(seqs, labels) if not label]
+    #assert any(sampled_seqs.count(seq) > 1 for seq in false_seqs), "Sampling with replacement not confirmed for minority class."
+    #expected_length = 2 * max(sampled_labels.count(True), sampled_labels.count(False))
+    #assert len(sampled_seqs) == expected_length and len(sampled_labels) == expected_length, "Unexpected output length."
+    print("test_sample_seqs passed successfully.")
+
 
 def test_one_hot_encode_seqs():
-    pass
+    seq = ["ACGT"]
+    expected_encoding = [[1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0]]
+    expected = np.array(expected_encoding)
+    encoding_func = preprocess.one_hot_encode_seqs(seq)
+    assert np.allclose(expected,expected_encoding), "Expected one-hot encoding does not match the calculated encoding"
+    assert expected.shape == encoding_func.shape, "Output array dimensions don't match expected array dimensions"
+    print("test_one_hot_encode_seqs passed successfully.")
+
 
 
 test_single_forward()
@@ -130,3 +188,8 @@ test_forward()
 test_single_backprop()
 test_predict()
 test_binary_cross_entropy()
+test_binary_cross_entropy_backprop()
+test_mean_squared_error()
+test_mean_squared_error_backprop()
+test_one_hot_encode_seqs()
+test_sample_seqs()

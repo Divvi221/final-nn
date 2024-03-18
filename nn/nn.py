@@ -375,8 +375,6 @@ class NeuralNetwork:
                 Partial derivative of current layer Z matrix.
         """
         sigmoid = self._sigmoid(Z)
-        print("sig shape:",sigmoid.T.shape)
-        print("dA:",dA.shape) #dA shape is the problem
         dZ = dA.T * sigmoid * (1-sigmoid) #using chain rule and derivative of sigmoid this .T was not here before
         return dZ
 
