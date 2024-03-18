@@ -222,7 +222,7 @@ class NeuralNetwork:
             dA_prev = self._mean_squared_error_backprop(y,y_hat)
         else:
             raise Exception("Incorrect loss function")
-
+        
         #iterate through layers backwards
         for idx_prev, layer in reversed(list(enumerate(self.arch, 1))):
             idx = idx_prev - 1
@@ -375,9 +375,9 @@ class NeuralNetwork:
                 Partial derivative of current layer Z matrix.
         """
         sigmoid = self._sigmoid(Z)
-        print("sig shape:",sigmoid.shape)
-        print("dA:",dA.shape)
-        dZ = dA * sigmoid.T * (1-sigmoid.T) #using chain rule and derivative of sigmoid this .T was not here before
+        print("sig shape:",sigmoid.T.shape)
+        print("dA:",dA.shape) #dA shape is the problem
+        dZ = dA.T * sigmoid * (1-sigmoid) #using chain rule and derivative of sigmoid this .T was not here before
         return dZ
 
     def _relu(self, Z: ArrayLike) -> ArrayLike:
