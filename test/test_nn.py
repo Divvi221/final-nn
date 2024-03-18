@@ -158,19 +158,17 @@ def test_mean_squared_error_backprop():
     print("test_mean_squared_error_backprop passed successfully.")
 
 def test_sample_seqs():
-    random.seed(0)
-    seqs = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7']
-    labels = [True, True, True, True, False, False, False] #dataset is biased towards True
+    random.seed(6)
+    seqs = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6','seq7','seq8']
+    labels = [True, True, True, True, False, False,False,True] #dataset is biased towards True
     sampled_seqs, sampled_labels = preprocess.sample_seqs(seqs, labels) #after this we should have equal-ish True and False labels
-    print(sampled_labels)
     assert sampled_labels.count(True) == sampled_labels.count(False), "Balancing failed: Unequal number of classes."
-    #assert all(seq in sampled_seqs for seq, label in zip(seqs, labels) if label), "Loss of true-labeled sequences."
-    #false_seqs = [seq for seq, label in zip(seqs, labels) if not label]
-    #assert any(sampled_seqs.count(seq) > 1 for seq in false_seqs), "Sampling with replacement not confirmed for minority class."
-    #expected_length = 2 * max(sampled_labels.count(True), sampled_labels.count(False))
-    #assert len(sampled_seqs) == expected_length and len(sampled_labels) == expected_length, "Unexpected output length."
+    assert all(seq in sampled_seqs for seq, label in zip(seqs, labels) if label), "Loss of true-labeled sequences."
+    false_seqs = [seq for seq, label in zip(seqs, labels) if not label]
+    assert any(sampled_seqs.count(seq) > 1 for seq in false_seqs), "Sampling with replacement not confirmed for minority class."
+    expected_length = 2 * max(sampled_labels.count(True), sampled_labels.count(False))
+    assert len(sampled_seqs) == expected_length and len(sampled_labels) == expected_length, "Unexpected output length."
     print("test_sample_seqs passed successfully.")
-
 
 def test_one_hot_encode_seqs():
     seq = ["ACGT"]

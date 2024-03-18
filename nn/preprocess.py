@@ -38,9 +38,9 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     difference = abs(count_true - count_false) #difference between label counts
     additional_minority_seqs = random.choices(minority_seqs, k=difference) #sampling w replacement from minority
 
-    #combining original seq with added samples
-    sampled_seqs = majority_seqs + additional_minority_seqs
-    sampled_labels = [majority] * len(majority_seqs) + [minority] * difference
+    #combining original seq and labels with added samples
+    sampled_seqs = seqs + additional_minority_seqs
+    sampled_labels = labels + [minority] * difference
 
     #shuffle to maintain randomness
     combined = list(zip(sampled_seqs, sampled_labels))
