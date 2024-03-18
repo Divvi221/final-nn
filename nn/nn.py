@@ -114,7 +114,6 @@ class NeuralNetwork:
             A_curr = self._relu(Z_curr)
         else:
             raise Exception("Wrong activation function: {}".format(activation))
-        
         return A_curr, Z_curr
 
     def forward(self, X: ArrayLike) -> Tuple[ArrayLike, Dict[str, ArrayLike]]:
@@ -185,7 +184,7 @@ class NeuralNetwork:
         """
         #calculating dZ_curr
         if activation_curr == "sigmoid":
-            dZ_curr = self._sigmoid_backprop(dA_curr,Z_curr) #change this to appropriate args
+            dZ_curr = self._sigmoid_backprop(dA_curr,Z_curr) 
         elif activation_curr == "relu":
             dZ_curr = self._relu_backprop(dA_curr,Z_curr)
 
@@ -376,7 +375,9 @@ class NeuralNetwork:
                 Partial derivative of current layer Z matrix.
         """
         sigmoid = self._sigmoid(Z)
-        dZ = dA.T * sigmoid * (1-sigmoid) #using chain rule and derivative of sigmoid this .T was not here before
+        print("sig shape:",sigmoid.shape)
+        print("dA:",dA.shape)
+        dZ = dA * sigmoid.T * (1-sigmoid.T) #using chain rule and derivative of sigmoid this .T was not here before
         return dZ
 
     def _relu(self, Z: ArrayLike) -> ArrayLike:
